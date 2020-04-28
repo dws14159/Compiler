@@ -1,7 +1,7 @@
 #pragma once
-#include "pch.h"
 
-#pragma warning(disable:4820) // Don't need to know about padding bytes
+#include <junklib.h>
+#include <vector>
 
 class LineAssembler
 {

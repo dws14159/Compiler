@@ -1,8 +1,8 @@
 // Manages the line by line translation of Assembly Language into op-codes.
 // Also handles labels, definitions and other non-asm directives
 
-#include "pch.h"
 #include "LineAssembler.h"
+#include <iostream>
 
 LineAssembler::LineAssembler()
 {

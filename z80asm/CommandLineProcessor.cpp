@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "CommandLineProcessor.h"
 
 CommandLineProcessor::CommandLineProcessor(std::vector<std::string> args)

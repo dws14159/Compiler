@@ -1,7 +1,8 @@
 // JunkLib.cpp : Defines the functions for the static library.
 // This library is a bunch of random stuff that will eventually get refactored or deleted.
 
-#include "pch.h"
+#include <iostream>
+#include <windows.h>
 
 // TODO: This is an example of a library function
 void fnJunkLib()
