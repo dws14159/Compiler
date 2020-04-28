@@ -47,6 +47,26 @@ Testing: Assembler doesn't need any. Some other projects might
 ~
 Using wxWidgets for z80emu
 ~
+Switching precompiled headers off. Possible premature optimisation?
+Can switch it back on if needed.  Contents were:
+{
+#ifndef PCH_H
+#define PCH_H
+
+// System headers - switch warnings off
+#pragma warning(push,3)
+#pragma warning(disable:4365)
+#include <iostream>
+#include <windows.h>
+#include <vector>
+#include <fstream>
+#include <string>
+
+// Warnings back on for my stuff
+#pragma warning(pop)
+
+#include "junklib.h"
+}
 ~
 ~
 ~
