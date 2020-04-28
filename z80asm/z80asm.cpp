@@ -1,10 +1,16 @@
 // z80asm.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include "LineAssembler.h"
-#include "CommandLineProcessor.h"
+// System headers - switch warnings off
+#pragma warning(push,3)
+#pragma warning(disable:4365)
 #include <iostream>
 #include <fstream>
+// Warnings back on for my stuff
+#pragma warning(pop)
+
+#include "LineAssembler.h"
+#include "CommandLineProcessor.h"
 
 using std::endl;
 using std::cout;

@@ -1,7 +1,13 @@
 #pragma once
 
+// System headers - switch warnings off
+#pragma warning(push,3)
+#pragma warning(disable:4365)
 #include <vector>
 #include <string>
+// Warnings back on for my stuff
+#pragma warning(pop)
+
 
 class CommandLineProcessor
 {

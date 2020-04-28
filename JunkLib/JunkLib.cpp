@@ -1,8 +1,13 @@
 // JunkLib.cpp : Defines the functions for the static library.
 // This library is a bunch of random stuff that will eventually get refactored or deleted.
 
+// System headers - switch warnings off
+#pragma warning(push,3)
+#pragma warning(disable:4365)
 #include <iostream>
 #include <windows.h>
+// Warnings back on for my stuff
+#pragma warning(pop)
 
 // TODO: This is an example of a library function
 void fnJunkLib()

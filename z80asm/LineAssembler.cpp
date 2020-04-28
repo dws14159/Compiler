@@ -1,8 +1,14 @@
 // Manages the line by line translation of Assembly Language into op-codes.
 // Also handles labels, definitions and other non-asm directives
 
-#include "LineAssembler.h"
+// System headers - switch warnings off
+#pragma warning(push,3)
+#pragma warning(disable:4365)
 #include <iostream>
+// Warnings back on for my stuff
+#pragma warning(pop)
+
+#include "LineAssembler.h"
 
 LineAssembler::LineAssembler()
 {

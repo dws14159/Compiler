@@ -2,7 +2,13 @@
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 
+// System headers - switch warnings off
+#pragma warning(push,3)
+#pragma warning(disable:4365)
 #include <string>
+// Warnings back on for my stuff
+#pragma warning(pop)
+
 
 // Type definitions
 typedef unsigned __int16 addr_t; // Address type

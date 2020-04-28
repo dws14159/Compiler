@@ -1,7 +1,14 @@
 #pragma once
 
-#include <junklib.h>
+// System headers - switch warnings off
+#pragma warning(push,3)
 #include <vector>
+// Warnings back on for my stuff
+#pragma warning(pop)
+#pragma warning(disable:4820) // don't care about padding byte warnings
+
+#include <junklib.h>
+
 
 class LineAssembler
 {
