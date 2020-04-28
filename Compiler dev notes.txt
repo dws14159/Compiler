@@ -1,0 +1,243 @@
+PROJECT OUTLINE
+===============
+Some years ago I read that every programmer should have written a compiler. Seemed like a good idea and I had some spare time.
+Problem is: what platform? I don't want to go into all the detail of the x86/x64 platform, and I don't know it particularly well anyway.
+Considered the Amiga but same problem.
+Remembered that I know the 6502 and z80 fairly well. z80 is more powerful so decided on that.
+What hardware though? Obviously not a Sinclair ZX*.  Decided on an emulator instead.
+
+So this suite comprises a number of modules:
+z80asm -- for writing assembly programs that will test the emulator
+z80dis -- for disassembling programs that the compiler might have generated
+z80link -- linker for the runtime library and any object files created by z80asm/z80cc
+z80cc -- the C compiler for the z80 - the whole point of this project
+z80emu -- an emulator based on an instruction interpreter; this won't be a T-state accurate
+- emulator, it'll just take in each instruction and make the relevant changes in registers and memory.
+- There will be memory mapped IO with all attached hardware emulated, so this will run as a Windows GUI program.
+- Previously this just hit the WinAPI directly but in the rewrite I've decided to use wxWidgets.
+
+Over the years I've taken various copies at different stages of development, no source code control, so now
+I've got a mess of loads of different copies. Tried marking a directory as MASTER but this didn't work out.
+
+
+~~~~~~
+DECISIONS
+{
+PRJ Compiler - WTF is going on!!!
+Loads of duplicates?
+And what's this PRJ Compiler restore? Seems to be merging loads more duplicates!
+Want to upload to Git but need to get it in some sort of order first.
+Code is basically C style with some classes thrown in.
+Lots of magic numbers being thrown around all over the place.
+Although it works, frankly it's a mess and I can do better.
+
+--> Rewrite the whole thing
+
+~
+G:\CurrentActivity\PRJ Compiler\MASTER
+- this should be the main one
+Contents backed up to G:\CurrentActivity\MASTER 4-4-2020.7z
+
+However we're doing the rewrite in G:\CurrentActivity\PRJ Compiler Rewrite
+~
+Let's get all strings into std::string as soon as possible.  <-- Does this solve the Spectre issue?
+- Spectre: no, but converting argc and argv[] like this does: std::vector<std::string> args(argv, argv + argc);
+~
+Testing: Assembler doesn't need any. Some other projects might
+~
+Using wxWidgets for z80emu
+~
+~
+~
+~
+~
+~
+~
+~
+}
+~~~~~~
+Casting!
+
+static_cast is the main one.
+reinterpret_cast changes the type altogether, e.g. int to std::string*. 
+const_cast for adding or removing const or volatile.
+dynamic_cast casts pointers up and down am inheritance hierarchy, returns nullptr if there's a problem.
+~~~~~~
+~~~~~~
+~~~~~~
+Q&A
+
+Q: Rewrite in VC++2019?
+A: Yes
+
+Q: Automated testing?
+A: No. There isn't a lot of interplay with this. Lots of little transformations into little results that each either work or don't. The emulator might warrant it.
+
+Q: z80asm: Is asm a good place to start?
+A: Don't see why not.
+
+Q: z80asm: Console or GUI?  GUI would be nicer.
+A: Console.  This is only a utility to support the compiler. I don't want to write a fully featured Z80 asm IDE.
+So this will be a command line utility to take a .asm file and produce... whatever it produced before. Was it executable or object?
+
+Q: z80asm: Was the output executable or object?
+A: Text-based object files, structure: [address { [byte|XX]* }]* symbol-table
+
+Q: z80asm: might be nice to look at VSCode integration
+A: Err, no.
+
+Q: Solution: when do we first check in to Git?  When z80asm is complete?
+A: No, z80asm started, all other projects stubbed, z80emu created as a minimal wxWidgets. Check-in to git and upload to GitHub WIP
+
+~~~~~~
+TASKS
+=====
+0. PLAN
+-------
+{{
+Gitify the project and bung it on GitHub
+- after uploading, download to a separate directory to make sure the .gitignore has worked OK.
+~
+Get z80asm to the point where it can generate some simple files
+~
+z80link to convert just one .z8o into .z8x, no symbol table
+~
+z80emu to run the output
+{
+maybe this will be to flash an LED. Thought: how about an "escape" sequence which prompts the emulator to do some stuff
+instead of directly executing instructions? Might be one way to implement "wait for timer" without a 100% CPU tight loop.
+- or maybe that's what "halt" is for. Yes, it causes the CPU to wait for the next interrupt, although the detail on what
+exactly that means is somewhat missing.
+}
+~
+~
+~
+~
+~
+}}
+
+
+1. Eliminate duplicates -- sidetracked into 2
+---------------------------------------------
+{{
+So basically duplicates will be eliminated by rewriting each project, using the old duplicates for inspiration and refactoring throughout.
+
+G:\CurrentActivity\PRJ Compiler restore\MASTER
+- hmm, what's this?
+
+Seems to be another merging of duplicates.
+
+I think what I've got here is:
+G:\CurrentActivity\PRJ Compiler restore\MASTER contains one of each project that is most up to date
+G:\CurrentActivity\PRJ Compiler restore\Merging XXXX contains multiple XXXX's that are potentially different from each other that need comparing and merging into MASTER.
+
+So let's make a list of what's left to do:
+
+Merging z80asm
+{
+1,2,3 three different versions! And it's not clear which is latest.
+Try MASTER vs 1: lots of differences
+2: ditto
+3: ditto
+4: only one file but still lots of differences
+
+Try 1 with 2: LOD; 3,4 LOD
+5: identical, can delete
+6: identical, can delete
+
+Try 2 with 3,4: LOD
+
+Try 3 with 4: LOD
+
+Give up, rewrite as new
+Start with G:\CurrentActivity\PRJ Compiler restore\Merging z80asm\0
+then see what we can grab from 1,2,3,4, deleting as we go.
+}}
+~
+2. Start VS2019 solution -- WIP
+-------------------------------
+{{
+Location: G:\CurrentActivity\PRJ Compiler Rewrite
+Solution: Compiler.sln
+All previous individual projects to be recreated as Projects within this Solution.
+
+Starting z80asm
+
+Might be nice to have a play area too; created Junk(console app) and JunkLib
+
+G:\Dev\Test created as a handy location for test files - shove these into Git as well?
+- yes, at some point: G:\CurrentActivity\PRJ Compiler Rewrite\Compiler\TestFiles\<project>
+
+So what do we have in each directory in G:\CurrentActivity\PRJ Compiler restore\Merging z80asm ?
+0: assline.cpp, labels.cpp, "Test files" dir with 21 .asm files, DS_writeup.txt containing
+{
+Still to implement:
+- using assline2 to compile source to executable
+- compile source to linkable object file
+- Error reporting will probably need upgrading to display the line number, otherwise
+the programmer won't be able to find the code.
+}
+1: everything in z80asm.cpp, Debug contains 14 .asm files and other types (z80, emu, as0)
+2: as 0 but 20 .asm files and a load of other stuff
+3: everything in z80asm.txt, Debug contains 7 .asm files etc
+4: only z80asm.cpp
+
+PRJ Compiler restore\Merging z80asm
+contents zipped
+so as I process each directory while rewriting, I can delete stuff --> when file sizes get to zero, they can be deleted.
+Doesn't matter about not compiling; if I need to I can unzip.
+
+Starting wip PRJ Compiler restore\Merging z80asm\0
+
+Assembler output is going to be a series of blocks:
+start address { 
+  byte, byte, XX, ...,
+  byte, XX, ...,
+} and label references. Commas at end of last line should be OK. Or no comma at the end of the line. Intermediate storage will just be a vector<string>.
+The assembler will resolve as many labels as it can.
+(In fact the line assembler should be able to resolve some references, namely the ones that jump back.)
+The linker will resolve all the remaining XX's and labels
+If file1.asm contains blocks for 0 {} and $1000 {}, but contains a jump to an unknown label which might resolve to $2xxx defined in file2.asm,
+file1.o will need XX's indicating where the jump command is and what the label name is.
+There could be several jumps/calls to the label.
+
+We don't need actual XX's. 00's would do too if we want to use __int8 - but do we? We need to make sure we know where all the places are than need resolving.
+But we need something that sticks out as obvious if we miss it.  FF might be the choice.
+However if we are actually storing it as a list of 2-char hex numbers we could use XX as being even more obvious, and any conversion to hex will fail. So let's do that.
+
+Assembler object takes istream and ostream, so it's testable with stringstreams and implementable with fstreams
+}}
+
+
+
+
+Possible bugs:
+{
+in z80Emu::op_alu
+case ALU_NEG: // neg
+...
+  if (regA=0x80)  <-- assignment not compare
+~
+unsigned short might not be 16-bit any more
+~
+~
+~
+}
+~~~~~~
+
+#pragma warning(push,3)
+#pragma warning(disable:4365)
+#include <iostream>
+#include <errno.h>
+#include <windows.h>
+#include <vector>
+#pragma warning(pop)
+// #pragma warning(disable:5045) // no way to get rid of Spectre warnings - yes there is: for (std::string arg : args) instead of for (int i...)
+
+#include "junklib.h"
+~~~~~~
+~~~~~~
+~~~~~~
+~~~~~~
+~~~~~~
+~~~~~~
