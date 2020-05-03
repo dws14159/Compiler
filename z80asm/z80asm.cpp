@@ -1,16 +1,18 @@
 // z80asm.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-// System headers - switch warnings off
+// System headers - switch warnings to L3
 #pragma warning(push,3)
 #pragma warning(disable:4365)
 #include <iostream>
 #include <fstream>
+#include <sstream>
 // Warnings back on for my stuff
 #pragma warning(pop)
 
 #include "LineAssembler.h"
 #include "CommandLineProcessor.h"
+#include "SymbolManager.h"
 
 using std::endl;
 using std::cout;
@@ -32,7 +34,8 @@ void ShowHelp(std::string ProgramName)
 void InteractiveMode()
 {
     cout << "\nEntering interactive mode. Press Ctrl-C to exit the program\n\n";
-    LineAssembler la;
+    SymbolManager sm;
+    LineAssembler la(sm);
     for (;;)
     {
         cout << "Enter line to assemble (Ctrl-C to quit) : ";
@@ -78,14 +81,30 @@ void Assemble(std::string inFilename, std::string outFilename)
         return;
     }
 
-    // instead of below:
-    LineAssembler la; // Translates a line of assembly into the relevant bytes (also used by InteractiveMode)
+    SymbolManager sm;
+    LineAssembler la(sm); // Translates a line of assembly into the relevant bytes (also used by InteractiveMode)
 
     // I was planning a class called Assembler which would co-ordinate the inFS, outFS and LineAssembler.
     // But I can't pass streams into other objects - the constructors to do that are explicitly defined as deleted.
     // So there will need to be another solution.
 
+    std::stringstream outBlock;
+    std::string inLine;
+    while (std::getline(inFS, inLine)) {
+        la.Translate(inLine);
 
+        // Did we get an ORG statement?
+        if (la.OriginStatement) {
+            cout << "Origin statement; new address $" << std::hex << la.OriginAddress << endl;
+        }
+        // Labels count as definitions too; LineAssembler will have added either to the SymbolManager
+        if (la.Definition) {
+            cout << "Definition: " << la.SymbolName << "= $" << std::hex << la.SymbolValue << endl;
+        }
+        if (la.OpCode) {
+            cout << "OpCode: " << StringVectorToString(la.OpCodeBytes, " ") << endl;
+        }
+    }
 
     // until EOF:
     // read line from inFS

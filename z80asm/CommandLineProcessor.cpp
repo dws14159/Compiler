@@ -37,6 +37,7 @@ void CommandLineProcessor::ProcessArgs()
         }
         else
             InvalidArgs = true;
+        break;
 
     default:
         ShowHelp = true;

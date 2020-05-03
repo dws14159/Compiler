@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClCompile Include="CommandLineProcessor.cpp" />
     <ClCompile Include="LineAssembler.cpp" />
+    <ClCompile Include="SymbolManager.cpp" />
     <ClCompile Include="z80asm.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +163,7 @@
   <ItemGroup>
     <ClInclude Include="CommandLineProcessor.h" />
     <ClInclude Include="LineAssembler.h" />
+    <ClInclude Include="SymbolManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

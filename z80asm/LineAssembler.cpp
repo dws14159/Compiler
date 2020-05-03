@@ -1,7 +1,7 @@
 // Manages the line by line translation of Assembly Language into op-codes.
 // Also handles labels, definitions and other non-asm directives
 
-// System headers - switch warnings off
+// System headers - switch warnings to L3
 #pragma warning(push,3)
 #pragma warning(disable:4365)
 #include <iostream>
@@ -10,7 +10,7 @@
 
 #include "LineAssembler.h"
 
-LineAssembler::LineAssembler()
+LineAssembler::LineAssembler(SymbolManager &_sm) : sm(_sm)
 {
     OriginStatement = false;
     OriginAddress = 0;

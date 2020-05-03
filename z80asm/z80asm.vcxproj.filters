@@ -24,12 +24,18 @@
     <ClCompile Include="LineAssembler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SymbolManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandLineProcessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LineAssembler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SymbolManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

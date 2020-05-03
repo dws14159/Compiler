@@ -1,10 +1,12 @@
 // JunkLib.cpp : Defines the functions for the static library.
 // This library is a bunch of random stuff that will eventually get refactored or deleted.
 
-// System headers - switch warnings off
+// System headers - switch warnings to L3
 #pragma warning(push,3)
 #pragma warning(disable:4365)
 #include <iostream>
+#include <vector>
+#include <algorithm>
 #include <windows.h>
 // Warnings back on for my stuff
 #pragma warning(pop)
@@ -12,6 +14,23 @@
 // TODO: This is an example of a library function
 void fnJunkLib()
 {
+}
+
+// vec=vector of strings; sep=separator character or string
+std::string StringVectorToString(std::vector<std::string> vec, std::string sep)
+{
+    bool first = true;
+    std::string ret;
+    std::for_each(vec.begin(), vec.end(), [&](const std::string& s) {
+        if (first) {
+            first = false;
+            ret = s;
+        }
+        else {
+            ret += sep + s;
+        }
+        });
+    return ret;
 }
 
 void DisplayTypedefSizes()

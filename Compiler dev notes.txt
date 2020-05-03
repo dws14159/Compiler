@@ -20,9 +20,19 @@ Over the years I've taken various copies at different stages of development, no 
 I've got a mess of loads of different copies. Tried marking a directory as MASTER but this didn't work out.
 
 
+INDEX
+=====
+z000 Decisions
+z001 Task list
+z002 Task details
+z003 Bug list
+z004 Reference material
+
+
 ~~~~~~
-DECISIONS
-{
+z000 Decisions
+==============
+{{
 PRJ Compiler - WTF is going on!!!
 Loads of duplicates?
 And what's this PRJ Compiler restore? Seems to be merging loads more duplicates!
@@ -47,44 +57,23 @@ Testing: Assembler doesn't need any. Some other projects might
 ~
 Using wxWidgets for z80emu
 ~
-Switching precompiled headers off. Possible premature optimisation?
-Can switch it back on if needed.  Contents were:
-{
-#ifndef PCH_H
-#define PCH_H
+we can simplify the parsing for numbers:
+$xxx = hex: x in 0123456789abcdef
+xxxx = decimal: x in 0123456789
+anything else where a number is expected is a label
 
-// System headers - switch warnings off
-#pragma warning(push,3)
-#pragma warning(disable:4365)
-#include <iostream>
-#include <windows.h>
-#include <vector>
-#include <fstream>
-#include <string>
+We're not going to support that batshit beefh notation for a hex number. It's $beef.
+~
+Wherever possible we should follow the return value convention 0==OK
+(But should I think about throwing exceptions instead? -> Only if it makes the code easier to understand.)
+~
+~
+~
+~
+~
+~
+}}
 
-// Warnings back on for my stuff
-#pragma warning(pop)
-
-#include "junklib.h"
-}
-~
-~
-~
-~
-~
-~
-~
-}
-~~~~~~
-Casting!
-
-static_cast is the main one.
-reinterpret_cast changes the type altogether, e.g. int to std::string*. 
-const_cast for adding or removing const or volatile.
-dynamic_cast casts pointers up and down am inheritance hierarchy, returns nullptr if there's a problem.
-~~~~~~
-~~~~~~
-~~~~~~
 Q&A
 
 Q: Rewrite in VC++2019?
@@ -107,38 +96,24 @@ Q: z80asm: might be nice to look at VSCode integration
 A: Err, no.
 
 Q: Solution: when do we first check in to Git?  When z80asm is complete?
-A: No, z80asm started, all other projects stubbed, z80emu created as a minimal wxWidgets. Check-in to git and upload to GitHub WIP
-
-~~~~~~
-TASKS
-=====
-0. PLAN
--------
-{{
-Gitify the project and bung it on GitHub
-- after uploading, download to a separate directory to make sure the .gitignore has worked OK.
-~
-Get z80asm to the point where it can generate some simple files
-~
-z80link to convert just one .z8o into .z8x, no symbol table
-~
-z80emu to run the output
-{
-maybe this will be to flash an LED. Thought: how about an "escape" sequence which prompts the emulator to do some stuff
-instead of directly executing instructions? Might be one way to implement "wait for timer" without a 100% CPU tight loop.
-- or maybe that's what "halt" is for. Yes, it causes the CPU to wait for the next interrupt, although the detail on what
-exactly that means is somewhat missing.
-}
-~
-~
-~
-~
-~
-}}
+A: No, z80asm started, all other projects stubbed, z80emu created as a minimal wxWidgets. Check-in to git and upload to GitHub
 
 
-1. Eliminate duplicates -- sidetracked into 2
----------------------------------------------
+
+z001 Task list
+==============
+T000 Plan
+T001 Eliminate duplicates - sidetracked onto T002
+T002 Start VS2019 solution
+T003 Get z80asm to the point where it can generate some simple files       <--- WIP
+T004 z80link to convert just one .z8o into .z8x, no symbol table, no memory mapped IO (emu will start with some preconfigured hardware which can then later be customised)
+T005 z80emu to run the output
+
+
+z002 Task details
+=================
+T001 Eliminate duplicates - sidetracked onto T002
+-------------------------
 {{
 So basically duplicates will be eliminated by rewriting each project, using the old duplicates for inspiration and refactoring throughout.
 
@@ -173,9 +148,9 @@ Give up, rewrite as new
 Start with G:\CurrentActivity\PRJ Compiler restore\Merging z80asm\0
 then see what we can grab from 1,2,3,4, deleting as we go.
 }}
-~
-2. Start VS2019 solution -- WIP
--------------------------------
+
+T002 Start VS2019 solution
+--------------------------
 {{
 Location: G:\CurrentActivity\PRJ Compiler Rewrite
 Solution: Compiler.sln
@@ -229,35 +204,87 @@ Assembler object takes istream and ostream, so it's testable with stringstreams 
 }}
 
 
+T003 Get z80asm to the point where it can generate some simple files       <--- WIP
+====================================================================
+{{
+First program will be to toggle an LED when a button is pressed.
+Hardware will emulate
+(a) a button at E000h, which will read from the GUI and hold the "button has been pressed" (1) state until it's read, at which time it will auto-reset to zero
+(b) an LED at E001h, where 0=off, 1=on
+
+Program firstLED.asm:
+
+ORG 0
+btn equ $e000
+led equ $e001
+
+read:
+ld a,(btn)
+jp z,read
+
+; button has been pressed
+ld a,(led)
+xor 1
+ld (led),a
+jmp read
+
+}}
 
 
-Possible bugs:
+T004 z80link to convert just one .z8o into .z8x, no symbol table, no memory mapped IO (emu will start with some preconfigured hardware which can then later be customised)
+==========================================================================================================================================================================
+{{
+}}
+
+
+T005 z80emu to run the output
+=============================
+{{
+maybe this will be to flash an LED. Thought: how about an "escape" sequence which prompts the emulator to do some stuff
+instead of directly executing instructions? Might be one way to implement "wait for timer" without a 100% CPU tight loop.
+- or maybe that's what "halt" is for. Yes, it causes the CPU to wait for the next interrupt, although the detail on what
+exactly that means is somewhat missing.
+}}
+
+
+
+z003 Bug list
+=============
+B000 z80emu assignment in if
 {
 in z80Emu::op_alu
 case ALU_NEG: // neg
 ...
   if (regA=0x80)  <-- assignment not compare
-~
-unsigned short might not be 16-bit any more
-~
-~
-~
 }
-~~~~~~
+B001 unsigned short might not be 16-bit any more
 
+
+z004 Reference material
+=======================
+C++ Casting
+
+static_cast is the main one.
+reinterpret_cast changes the type altogether, e.g. int to std::string*. 
+const_cast for adding or removing const or volatile.
+dynamic_cast casts pointers up and down am inheritance hierarchy, returns nullptr if there's a problem.
+~
+Header shenanigans
+
+// System headers - switch warnings to L3
 #pragma warning(push,3)
 #pragma warning(disable:4365)
-#include <iostream>
-#include <errno.h>
-#include <windows.h>
-#include <vector>
+...
+// Warnings back on for my stuff
 #pragma warning(pop)
-// #pragma warning(disable:5045) // no way to get rid of Spectre warnings - yes there is: for (std::string arg : args) instead of for (int i...)
 
-#include "junklib.h"
-~~~~~~
-~~~~~~
-~~~~~~
-~~~~~~
-~~~~~~
-~~~~~~
+Tried to disable Spectre warnings with #pragma warning(disable:5045)
+but this had no effect.
+
+Instead of looping over argv as in traditional C code, converting the command line args into a vector solved it
+std::vector<std::string> args(argv, argv + argc);
+~
+~
+~
+~
+~

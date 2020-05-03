@@ -1,6 +1,6 @@
 #pragma once
 
-// System headers - switch warnings off
+// System headers - switch warnings to L3
 #pragma warning(push,3)
 #include <vector>
 // Warnings back on for my stuff
@@ -8,14 +8,20 @@
 #pragma warning(disable:4820) // don't care about padding byte warnings
 
 #include <junklib.h>
-
+#include "SymbolManager.h"
+#pragma warning(push)
+#pragma warning(disable:4626) // assignment operator implicitly defined as deleted
+#pragma warning(disable:5027) // move assignment operator implicitly defined as deleted
 
 class LineAssembler
 {
-public:
-    LineAssembler();
+private:
+    SymbolManager& sm;
 
-    // Results of translating an ORG <adddress> line
+public:
+    LineAssembler(SymbolManager& _sm);
+
+    // Results of translating an ORG <address> line
     bool OriginStatement;
     addr_t OriginAddress;
 
@@ -30,4 +36,6 @@ public:
 
     void Translate(std::string line);
 };
+
+#pragma warning(pop)
 
