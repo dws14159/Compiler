@@ -94,18 +94,31 @@ void Assemble(std::string inFilename, std::string outFilename)
         la.Translate(inLine);
 
         // Did we get an ORG statement?
-        if (la.OriginStatement) {
-            cout << "Origin statement; new address $" << std::hex << la.OriginAddress << endl;
-        }
+        //if (la.OriginStatement) {
+        //    cout << "Origin statement; new address $" << std::hex << la.OriginAddress << endl;
+        //}
         // Labels count as definitions too; LineAssembler will have added either to the SymbolManager
-        if (la.Definition) {
-            cout << "Definition: " << la.SymbolName << "= $" << std::hex << la.SymbolValue << endl;
-        }
-        if (la.OpCode) {
-            cout << "OpCode: " << StringVectorToString(la.OpCodeBytes, " ") << endl;
-        }
+        // - but should LineAssembler manage the SymbolManager? This file (z80asm.cpp) needs to manage the application flow but
+        // -- delegate the details; if LineAssembler found a label should it 
+        //if (la.Definition) {
+        //    cout << "Definition: " << la.SymbolName << "= $" << std::hex << la.SymbolValue << endl;
+        //}
+        //if (la.OpCode) {
+        //    cout << "OpCode: " << StringVectorToString(la.OpCodeBytes, " ") << endl;
+        //}
     }
 
+    std::cout << "Finished processing input file. Symbol table:\n";
+    auto symTab = sm.GetLabelNames();
+    for (auto s : symTab) {
+        int value = 0;
+        if (!sm.GetValue(s, value)) {
+            cout << s << "=" << value << endl;
+        }
+        else {
+            cout << s << " is undefined\n";
+        }
+    }
     // until EOF:
     // read line from inFS
     // assemble the line

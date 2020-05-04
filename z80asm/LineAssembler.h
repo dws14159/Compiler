@@ -16,19 +16,19 @@
 class LineAssembler
 {
 private:
-    SymbolManager& sm;
+    SymbolManager& SymbolMgr;
+    std::string Line;
+    addr_t CurrentAddress;
+
+    void ResetFlags();
+    void CleanInput();
 
 public:
-    LineAssembler(SymbolManager& _sm);
+    LineAssembler(SymbolManager& sm);
 
     // Results of translating an ORG <address> line
     bool OriginStatement;
     addr_t OriginAddress;
-
-    // Symbol definition SymbolName EQU <value>
-    bool Definition;
-    std::string SymbolName;
-    addr_t SymbolValue; // TODO different type for symbol values?
 
     // Op-code
     bool OpCode;
@@ -38,4 +38,3 @@ public:
 };
 
 #pragma warning(pop)
-

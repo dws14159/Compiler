@@ -1,6 +1,13 @@
-#include "SymbolManager.h"
+// System headers - switch warnings to L3
+#pragma warning(push,3)
+#pragma warning(disable:4365)
 #include <algorithm>
 #include <tuple>
+#include <iostream>
+// Warnings back on for my stuff
+#pragma warning(pop)
+
+#include "SymbolManager.h"
 
 const int ValueUndefined = 0xdeadbeef;
 
@@ -39,17 +46,20 @@ bool SymbolManager::AddLabel(std::string name, int value)
     // If not found, add the label and value to the list
     // typedef std::tuple<std::string, bool, int> Label_t;
     if (!found) {
+        std::cout << "SymbolManager adding label [" << name << "] with value [" << value << "]\n";
         Labels.push_back({ name,true,value });
         return false;
     }
     else if (!defined) {
         // Found and not defined
+        std::cout << "SymbolManager changing label [" << name << "] from undefined to value [" << value << "]\n";
         it->Defined = true;
         it->Value = value;
         return false;
     }
     else {
         // Found and defined - we don't support changing a label's value
+        std::cout << "SymbolManager not changing label [" << name << "]; this is an error\n";
         return true;
     }
 }
@@ -68,10 +78,21 @@ bool SymbolManager::AddLabel(std::string name)
     }
     // If not found, add the label to the list as undefined. Otherwise return TRUE - we don't support duplicate labels or changing a label with a value to one without.
     if (found) {
-        return true; 
+        std::cout << "SymbolManager not adding label [" << name << "]; this is an error\n";
+        return true;
     }
     else {
+        std::cout << "SymbolManager adding undefined label [" << name << "]\n";
         Labels.push_back({ name,false,ValueUndefined });
         return false;
     }
+}
+
+std::vector<std::string> SymbolManager::GetLabelNames()
+{
+    std::vector<std::string> ret;
+    for (auto label : Labels) {
+        ret.push_back(label.Name);
+    }
+    return ret;
 }

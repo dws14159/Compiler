@@ -29,4 +29,6 @@ public:
     bool AddLabel(std::string name, int value);
     // Add an undefined symbol to the list. Returns false if the symbol is already present, whether or not it has a value.
     bool AddLabel(std::string name);
+    // Return a list of label names
+    std::vector<std::string> GetLabelNames();
 };
