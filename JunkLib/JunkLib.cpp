@@ -6,14 +6,25 @@
 #pragma warning(disable:4365)
 #include <iostream>
 #include <vector>
-#include <algorithm>
 #include <windows.h>
 // Warnings back on for my stuff
 #pragma warning(pop)
 
+#include "junklib.h"
+
 // TODO: This is an example of a library function
 void fnJunkLib()
 {
+}
+
+std::string ByteToString(reg8_t byte)
+{
+    std::string ret = "";
+    std::string hexChars = "0123456789abcdef";
+
+    ret += hexChars[static_cast<reg8_t>((byte >> 4) & 0x0f)];
+    ret += hexChars[static_cast<reg8_t>(byte & 0x0f)];
+    return ret;
 }
 
 // vec=vector of strings; sep=separator character or string
@@ -21,7 +32,7 @@ std::string StringVectorToString(std::vector<std::string> vec, std::string sep)
 {
     bool first = true;
     std::string ret;
-    std::for_each(vec.begin(), vec.end(), [&](const std::string& s) {
+    for (auto s : vec) {
         if (first) {
             first = false;
             ret = s;
@@ -29,7 +40,7 @@ std::string StringVectorToString(std::vector<std::string> vec, std::string sep)
         else {
             ret += sep + s;
         }
-        });
+    }
     return ret;
 }
 

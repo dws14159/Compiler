@@ -16,6 +16,7 @@ typedef unsigned __int16 addr_t; // Address type
 typedef unsigned __int16 reg16_t; // 16-bit register
 typedef unsigned __int8  reg8_t; // 8-bit register
 
+std::string ByteToString(reg8_t byte);
 void DisplayTypedefSizes();
 std::string GetErrnoString(errno_t err);
 //void StripTrailingSpace(char*);

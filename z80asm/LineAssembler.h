@@ -22,6 +22,7 @@ private:
 
     void ResetFlags();
     void CleanInput();
+    bool HandleDirective();
 
 public:
     LineAssembler(SymbolManager& sm);

@@ -67,6 +67,16 @@ We're not going to support that batshit beefh notation for a hex number. It's $b
 Wherever possible we should follow the return value convention 0==OK
 (But should I think about throwing exceptions instead? -> Only if it makes the code easier to understand.)
 ~
+Trying to decide what design patterns to use for z80asm, nothing is immediately obvious.
+A couple of suggestions here https://stackoverflow.com/questions/5586747/design-pattern-for-making-an-assembler
+point to lookup tables and avoiding if - else if ladders, one of which I've already started climbing so I'll head in that direction instead.
+
+This refers to using regexes to parse computer languages:
+https://en.wikipedia.org/wiki/Parsing#Parser
+
+hey wtf!!!!!
+this https://stackoverflow.com/questions/1822797/regex-writing-a-toy-compiler-parsing-comment-remover
+talks about using a DFA table. Well isn't that more or less what I had before? OK it wasn't a table, it was in code, - ah no, it was effectively an if/else/strcmp ladder
 ~
 ~
 ~
@@ -228,6 +238,137 @@ xor 1
 ld (led),a
 jmp read
 
+Lookup table:
+org - address
+label - equ - value
+
+OK, drawing together several ideas:
+- you should use a lookup table
+- don't use an if/else if ladder
+- polymorphism can replace switch blocks
+
+we could have a lookup table containing:
+regex to match - a processing object which implements a common interface IAssemble
+Translate function then scans the table for the first regex that matches, then invokes the object's Process then GetBytes functions
+What about regex -> lambda?
+
+DFA then!!!
+iXXXX=intermediate symbol
+fXXXX=terminal symbol (for keywords this will be confirmed with a space)
+s=symbol
+
+Input--> |l    |d    |< >  |j    |m    |p    |x    |o    |r    |g    |     |     |     |     |     |     |     |     |     |     |     |     |     
+State----------------------------------------------------------------------------------------------------------------------------------------------
+0        |iL   |  s  |     |iJ   |     |     |iX   |iO   |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iL       |     |iLD  |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iLD      |     |     |fLD  |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iJ       |     |     |     |     |iJM  |iJP  |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iJM      |     |     |     |     |     |iJMP |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iJMP     |     |     |fJMP |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iJP      |     |     |fJP  |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iX       |     |     |     |     |     |     |     |iXO  |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iXO      |     |     |     |     |     |     |     |     |iXOR |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iXOR     |     |     |fXOR |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iO       |     |     |     |     |     |     |     |     |iOR  |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+iOR      |     |     |fOR  |     |     |     |     |     |     |iORG |     |     |     |     |     |     |     |     |     |     |     |     |     
+iORG     |     |     |fORG |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     
+
+no this is silly.
+More reading... Seems compilers take a series of regex's then convert them into a large NFA. The implication is that this is done automatically.
+So effectively we end up with a table like above.
+- except we now discover this: https://courses.engr.illinois.edu/cs421/su2009/lectures/05-lexical-analysis.pdf
+where it says on p22 the above table is the bad way, vs the good way which is to collect a bunch of [a-z]'s together then check if the whole thing matches a known keyword.
+but looking at it again p10 contradicts that, or seems to.
+That's the problem with only having the slides.
+
+What I'll do then is subject each input line to one or more regex's finding hopefully just one match.
+So a lookup table of regex->lambda would seem to be the way ahead.
+If this turns out to be too slow then we can look at some kind of optimisation, maybe a DFA (which is essentially what the old version was).
+
+Partial build; output is:
+
+Assemble file [G:\Dev\Test\firstLED.asm], output into [G:\Dev\Test\firstLED.z8o]
+
+Translate line from file: [ORG 0]
+Class AsmOrginvoked for matching strings: [org 0] [0]
+
+Translate line from file: [btn equ $e000]
+Class AsmEquinvoked for matching strings: [btn equ $e000] [btn] [$e000]
+
+Translate line from file: [led equ $e001]
+Class AsmEquinvoked for matching strings: [led equ $e001] [led] [$e001]
+
+Translate line from file: []
+Ignore blank line
+
+Translate line from file: [read:]
+SymbolManager adding label [read] with value [0]
+Ignore blank line
+
+Translate line from file: [ld a,(btn)]
+Got no matches! [ld a,(btn)]
+
+Translate line from file: [jp z,read]
+Got no matches! [jp z,read]
+
+Translate line from file: []
+Ignore blank line
+
+Translate line from file: [; button has been pressed]
+Ignore blank line
+
+Translate line from file: [ld a,(led)]
+Got no matches! [ld a,(led)]
+
+Translate line from file: [xor 1]
+Got no matches! [xor 1]
+
+Translate line from file: [ld (led),a]
+Got no matches! [ld (led),a]
+
+Translate line from file: [jmp read]
+Got no matches! [jmp read]
+Finished processing input file. Symbol table:
+read=0
+
+TODO from this:
+
+Translate line from file: [ORG 0]
+Class AsmOrginvoked for matching strings: [org 0] [0]
+
+Translate line from file: [btn equ $e000]
+Class AsmEquinvoked for matching strings: [btn equ $e000] [btn] [$e000]
+
+Translate line from file: [led equ $e001]
+Class AsmEquinvoked for matching strings: [led equ $e001] [led] [$e001]
+
+Translate line from file: [read:]
+SymbolManager adding label [read] with value [0]
+Ignore blank line
+
+Translate line from file: [ld a,(btn)]
+Got no matches! [ld a,(btn)]
+
+Translate line from file: [jp z,read]
+Got no matches! [jp z,read]
+
+Translate line from file: [ld a,(led)]
+Got no matches! [ld a,(led)]
+
+Translate line from file: [xor 1]
+Got no matches! [xor 1]
+
+Translate line from file: [ld (led),a]
+Got no matches! [ld (led),a]
+
+Translate line from file: [jmp read]
+Got no matches! [jmp read]
+Finished processing input file. Symbol table:
+read=0
+
+
+then of course linker, emulator
+Also split the z80asm.cpp out into a bunch of files
 }}
 
 

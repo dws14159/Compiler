@@ -90,8 +90,24 @@ void Assemble(std::string inFilename, std::string outFilename)
 
     std::stringstream outBlock;
     std::string inLine;
+    bool inAddrBlock = false;
     while (std::getline(inFS, inLine)) {
         la.Translate(inLine);
+        // File structure is going to be: [address { byte+ }\n]+ SymbolTable {\n[name:(value|UNDEFINED)\n]+}\n
+        // Under the new design I'm still going to need here:
+        // - ORG statements for building the file structure - a new ORG will close the current address block and start a new one
+        // - not labels, we'll get those from SymbolManager after this loop
+        // - anything else?
+        if (la.OriginStatement) {
+            if (inAddrBlock) {
+                cout << "Close address block\n";
+                inAddrBlock = false; // so do I need this flag at all? Only if something's going in between the address blocks
+            }
+            else {
+                cout << "Start address block at " << la.OriginAddress << endl;
+                inAddrBlock = true;
+            }
+        }
 
         // Did we get an ORG statement?
         //if (la.OriginStatement) {
@@ -116,7 +132,7 @@ void Assemble(std::string inFilename, std::string outFilename)
             cout << s << "=" << value << endl;
         }
         else {
-            cout << s << " is undefined\n";
+            cout << s << "=UNDEFINED\n"; // this is ok because the RHS will be a number not another label
         }
     }
     // until EOF:
@@ -130,6 +146,9 @@ void Assemble(std::string inFilename, std::string outFilename)
     //{
     //    cout << inLine << endl;
     //}
+
+    inFS.close();
+    outFS.close();
 }
 
 
