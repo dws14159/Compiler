@@ -20,30 +20,44 @@ To test this I would of course need a Z80 assembler. And disassembler.
 So we have the following projects:
 
 z80emu: The emulator, a Win32 GUI application.
+
 z80asm: Command line assembler.
+
 z80dis: Command line disassembler.
+
 z80cc: Command line C compiler for the above emulator.
+
 z80link: Linker
 
 The compiler generates text blocks like this:
 
 :_main
+
 @@length 59
+
 {
-  e5 dd e5 21 fc ff 39 f9 dd 21 00 00 dd 39 dd 36 
+
+e5 dd e5 21 fc ff 39 f9 dd 21 00 00 dd 39 dd 36 
   00 00 dd 36 01 ff dd 36 02 01 dd 36 03 ff dd 66 
   01 dd 6e 00 3e 03 77 dd 66 03 dd 6e 02 3e 0e 77 
   3e 00 21 04 00 39 f9 dd e1 e1 c9 
+
 }
 
 This is the C runtime file crt0.o that calls main:
 
 :__init
+
 @@refs _main,5
+
 @@length 8
+
 {
-  21 ff fe f9 cd 00 00 76
+
+21 ff fe f9 cd 00 00 76
+
 }
+
 
 The linker will put the address of main into the 5th byte, i.e. the 00 00 after cd. This is how the lack of relocatable addressing will be navigated.
 
