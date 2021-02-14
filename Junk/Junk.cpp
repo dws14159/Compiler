@@ -8,10 +8,10 @@
 // Warnings back on for my stuff
 #pragma warning(pop)
 
-#include "junklib.h"
+//#include "junklib.h"
 
 int main()
 {
     std::cout << "Hello World!\n";
-    DisplayTypedefSizes();
+    //DisplayTypedefSizes();
 }

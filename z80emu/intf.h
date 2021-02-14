@@ -149,7 +149,7 @@ public:
 		}
 		return 0x00;
 	}
-	void Interface::reset()
+	void reset()
 	{
 		for (vector<InterfaceObject*>::iterator i=ifObjects.begin(); i!=ifObjects.end(); i++)
 		{
