@@ -1,5 +1,21 @@
 PROJECT OUTLINE
 ===============
+
+Location: "G:\CurrentActivity\PRJ Compiler Rewrite"
+{
+TODO: Shove *everything* into this directory
+.sln files here are shortcuts to the ones I'm currently working on
+
+"Compiler" directory contains the main project - the newly written stuff. This is in git.
+
+"Old stuff" directory contains old duplicates
+- Contains "dups_XXX" directories for dups of project XXX
+- Each XXX contains old "z80asm, z80cc etc" directories arbitrarily renamed to 1,2,3,...
+
+"z80asm - Merging 0.sln" points to "G:\CurrentActivity\PRJ Compiler restore\Merging z80asm\0\z80asm.sln"
+}
+
+
 Some years ago I read that every programmer should have written a compiler. Seemed like a good idea and I had some spare time.
 Problem is: what platform? I don't want to go into all the detail of the x86/x64 platform, and I don't know it particularly well anyway.
 Considered the Amiga but same problem.

@@ -15,7 +15,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "z80dis", "z80dis\z80dis.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "z80link", "z80link\z80link.vcxproj", "{7740B94A-CA13-424B-9D1E-1D1FF67A7B6D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "z80emu", "z80emu\z80emu.vcxproj", "{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2443065F-DEA1-431D-8C92-F33EE92888BC}"
+	ProjectSection(SolutionItems) = preProject
+		Compiler dev notes.txt = Compiler dev notes.txt
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,14 +77,6 @@ Global
 		{7740B94A-CA13-424B-9D1E-1D1FF67A7B6D}.Release|x64.Build.0 = Release|x64
 		{7740B94A-CA13-424B-9D1E-1D1FF67A7B6D}.Release|x86.ActiveCfg = Release|Win32
 		{7740B94A-CA13-424B-9D1E-1D1FF67A7B6D}.Release|x86.Build.0 = Release|Win32
-		{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}.Debug|x64.ActiveCfg = Debug|x64
-		{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}.Debug|x64.Build.0 = Debug|x64
-		{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}.Debug|x86.ActiveCfg = Debug|Win32
-		{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}.Debug|x86.Build.0 = Debug|Win32
-		{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}.Release|x64.ActiveCfg = Release|x64
-		{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}.Release|x64.Build.0 = Release|x64
-		{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}.Release|x86.ActiveCfg = Release|Win32
-		{27A314F9-3C8B-421B-BF6A-1521BDB9D6FF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
