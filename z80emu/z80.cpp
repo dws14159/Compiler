@@ -3,6 +3,22 @@
 #include "intf.h"
 extern Interface *theUI;
 
+/*
+| S     | S     |Sign flag (Bit 7)                            |
+| Z     |  Z    |Zero flag (Bit 6)                            |
+| HC    |   H   |Half Carry flag (Bit 4)                      |
+| P/V   |    P  |Parity/Overflow flag (Bit 2, V=overflow)     |
+| N     |     N |Add/Subtract flag (Bit 1)                    |
+| CY    |      C|Carry flag (Bit 0)                           |
+*/
+uchar Zmask = 0x40;
+uchar Smask = 0x80;
+uchar Hmask = 0x08;
+uchar Pmask = 0x04; // or perhaps PVmask
+uchar Vmask = 0x04;
+uchar Nmask = 0x02;
+uchar Cmask = 0x01;
+
 const int opWR=0, opRD=1;
 
 z80Emu::z80Emu()
@@ -207,7 +223,7 @@ uchar z80Emu::op_alu(int op,uchar val)
 		regA++;
 		test=regA;
 		new_flag=Nmask;
-		if (regA=0x80) // a was -128 so neg overflows: a was 1000 0000, 2's comp 0111 1111, inc 1000 0000
+		if (regA==0x80) // a was -128 so neg overflows: a was 1000 0000, 2's comp 0111 1111, inc 1000 0000
 			new_flag|=Vmask;
 		setflags=~(Nmask|Vmask);
 		break;
@@ -230,7 +246,7 @@ uchar z80Emu::op_alu(int op,uchar val)
 		setflags=~(Vmask|Nmask);
 		break;
 	case ALU_SBC: // subtract with carry
-		if ((val+(regF|Cmask)>regA) || (val=0xff)) new_flag=Vmask|Cmask|Nmask;
+		if ((val+(regF|Cmask)>regA) || (val==0xff)) new_flag=Vmask|Cmask|Nmask;
 		regA-=val;
 		test=regA;
 		setflags=~(Vmask|Nmask);
@@ -313,7 +329,7 @@ void z80Emu::execute_op(int *time)
 		pc++;
 		break;
 	case 0x02: // ld (bc),a
-		addr=op_r16(1,rBC,0,0);
+		addr=op_r16(1,rBC,0,false);
 		memwrite(addr,regA);
 		*time=7;
 		pc++;
@@ -336,7 +352,7 @@ void z80Emu::execute_op(int *time)
 		pc++;
 		break;
 	case 0x0a: // ld a,(bc)
-		addr=op_r16(1,rBC,0,0);
+		addr=op_r16(1,rBC,0,false);
 		regA=memread(addr,0);
 		*time=7;
 		pc++;
@@ -353,7 +369,7 @@ void z80Emu::execute_op(int *time)
 		*time=4;
 		break;
 	case 0x12: // ld (de),a
-		addr=op_r16(1,rDE,0,0);
+		addr=op_r16(1,rDE,0,false);
 		memwrite(addr,regA);
 		*time=7;
 		pc++;
@@ -369,7 +385,7 @@ void z80Emu::execute_op(int *time)
 		op_jump(4,0x18,time);
 		break;
 	case 0x1a: // ld a,(de)
-		addr=op_r16(1,rDE,0,0);
+		addr=op_r16(1,rDE,0,false);
 		regA=memread(addr,0);
 		*time=7;
 		pc++;
@@ -383,13 +399,13 @@ void z80Emu::execute_op(int *time)
 		break;
 	case 0x22: // ld (NN),hl
 		addr=memread16(pc+1,1);
-		memwrite16(addr,op_r16(1,rHL,0,0));
+		memwrite16(addr,op_r16(1,rHL,0,false));
 		*time=16;
 		pc+=3;
 		break;
 	case 0x2a: // ld hl,(NN)
 		addr=memread16(pc+1,1);
-		op_r16(0,rHL,memread16(addr,0),0);
+		op_r16(0,rHL,memread16(addr,0),false);
 		*time=20;
 		pc+=3;
 		break;
@@ -483,8 +499,8 @@ void z80Emu::execute_op(int *time)
 		pc+=2;
 		break;
 	case 0xe3: // ex (sp),hl/ix/iy
-		addr=op_r16(1,rSP,0,0);
-		memwrite16(addr,op_r16(1,rHL,0,0));
+		addr=op_r16(1,rSP,0,false);
+		memwrite16(addr,op_r16(1,rHL,0,false));
 		*time=19;
 		pc++;
 		break;
@@ -523,7 +539,7 @@ void z80Emu::execute_op(int *time)
 		pc+=2;
 		break;
 	case 0xf9: // ld sp,hl/ix/iy
-		op_r16(0,rSP,op_r16(1,rHL,0,0),0);
+		op_r16(0,rSP,op_r16(1,rHL,0,0),false);
 		*time=6;
 		pc++;
 		break;
@@ -559,13 +575,13 @@ Instructions not yet implemented
 			else if ((byte & 0xe7)==0x20) op_jump(4,byte,time);                               // 001cc000 jr cc,d
 			else if ((byte & 0xcf)==0x01) pc+=op_ld( 3,byte,time,0);                          // 00dd0001 ld dd,NN
 			// 00??0010 ld (bc/de),a/ld (nn),hl/ld (nn),a handled above                       // 00??0010
-			else if ((byte & 0xcf)==0x03) { pc++;*time=6;op_r16(0,rDD,op_r16(1,rDD,0,0)+1,0);}// 00dd0011 inc dd			
+			else if ((byte & 0xcf)==0x03) { pc++;*time=6;op_r16(0,rDD,op_r16(1,rDD,0,false)+1,false);}// 00dd0011 inc dd			
 			else if ((byte & 0xc7)==0x04) pc+=op_ld(14,byte,time,0);                          // 00rrr100 inc r 0x04+r*8
 			else if ((byte & 0xc7)==0x05) pc+=op_ld(15,byte,time,0);                          // 00rrr101 dec r 0x05+r*8
 			else if ((byte & 0xc7)==0x06) pc+=op_ld( 2,byte,time,0);                          // 00rrr110 ld r,N
-			else if ((byte & 0xcf)==0x09) { pc++; *time=11; op_r16(4,rDD,0,0); }              // 00dd1001 add hl,dd
+			else if ((byte & 0xcf)==0x09) { pc++; *time=11; op_r16(4,rDD,0,false); }              // 00dd1001 add hl,dd
 			// 00dd1010 ld a,(bc)/ld a,(de)/ld hl,(nn)/ld a,(nn) handled above                // 00??1010
-			else if ((byte & 0xcf)==0x03) { pc++;*time=6;op_r16(0,rDD,op_r16(1,rDD,0,0)-1,0);}// 00dd1011 dec dd
+			else if ((byte & 0xcf)==0x03) { pc++;*time=6;op_r16(0,rDD,op_r16(1,rDD,0,false)-1,false);}// 00dd1011 dec dd
 			// 00???111 rlca/rrca/rla/rra/daa/cpl/scf/ccf handled above                       // 00???111
 			else if ((byte & 0xc0)==0x40) pc+=op_ld( 1,byte,time,0);                          // 01rrrsss ld r,s
 			// 01110110 halt handled above                                                    // 01110110
@@ -578,13 +594,13 @@ Instructions not yet implemented
 			else if ((byte & 0xf8)==0xb0) pc+=op_ld( 6,byte,time,ALU_OR );                    // 10110rrr or r 0xb0+r
 			else if ((byte & 0xf8)==0xb8) pc+=op_ld( 6,byte,time,ALU_CP );                    // 10111rrr cp r 0xb8+r
 			else if ((byte & 0xc7)==0xc0) op_jump(5,byte,time);                               // 11???000 ret cc
-			else if ((byte & 0xcf)==0xc1) { pc++; *time=10; op_r16(3,rDD,0,0); }              // 11dd0001 pop  dd
+			else if ((byte & 0xcf)==0xc1) { pc++; *time=10; op_r16(3,rDD,0,false); }              // 11dd0001 pop  dd
 			// 11??1001 ret/exx/jp (hl)/ld sp,hl handled above                                // 11??1001
 			else if ((byte & 0xc7)==0xc2) op_jump(3,byte,time);	                              // 11ccc010 jp cc,nn
 			// 110??011 jp nn/cb prefix/out(n),a/in a,(n) handled above                       // 110??011
 			// 111??011 ex (sp),hl/ex de,hl/di/ei handled above                               // 111??011
 			else if ((byte & 0xc7)==0xc4) op_jump(2,byte,time);                               // 11???100 call cc,nn
-			else if ((byte & 0xcf)==0xc5) { pc++; *time=10; op_r16(2,rDD,0,0); }              // 11dd0101 push dd
+			else if ((byte & 0xcf)==0xc5) { pc++; *time=10; op_r16(2,rDD,0,false); }              // 11dd0101 push dd
 			// 11dd1101 call nn/ix prefix/ed prefix/iy prefix handled above                   // 11dd1101
 			// 11???110 add a,n/adc a,n/sub n/sbc a,n/and n/xor n/or n/cp n handled above     // 11???110
 			else if ((byte & 0xc7)==0xc7) op_jump(1,byte,time);                               // 11aaa111 rst aaa
@@ -618,7 +634,7 @@ void z80Emu::op_jump(int typ,uchar byte,int *time)
 	switch (typ)
 	{
 	case 1: // rst
-		op_r16(2,-1,pc+1,0); // push return address
+		op_r16(2,-1,pc+1,false); // push return address
 		pc = byte & 0x38;
 		*time=11;
 		break;
@@ -628,7 +644,7 @@ void z80Emu::op_jump(int typ,uchar byte,int *time)
 		pc+=3;
 		if (cond)
 		{
-			op_r16(2,-1,pc,0); // push return address
+			op_r16(2,-1,pc,false); // push return address
 			pc=dest;
 			*time=17;
 		}
@@ -663,7 +679,7 @@ void z80Emu::op_jump(int typ,uchar byte,int *time)
 		pc++;
 		if (cond)
 		{
-			pc=op_r16(3,-1,0,0); // pop return address
+			pc=op_r16(3,-1,0,false); // pop return address
 			*time=11;
 		}
 		else *time=5;
@@ -684,20 +700,20 @@ void z80Emu::op_jump(int typ,uchar byte,int *time)
 		break;
 	
 	case 7: // reti, retn
-		pc=op_r16(3,-1,0,0); // pop return address
+		pc=op_r16(3,-1,0,false); // pop return address
 		*time=14;
 		break;
 
 	case 8: // jp (hl/ix/iy)
-		pc=memread16(op_r16(1,rHL,0,0),1);
+		pc=memread16(op_r16(1,rHL,0,false),1);
 		*time=4;
 		break;
 	}
 }
 
-int z80Emu::execute_cb(int *time)
+uchar z80Emu::execute_cb(int *time)
 {
-	int len=2;
+	uchar len=2;
 	uchar byte;
 	if (index==0)
 		byte=memread(pc+1,1);
@@ -718,18 +734,18 @@ int z80Emu::execute_cb(int *time)
 	return len;
 }
 
-#pragma message ( "z80Emu::batch_compare() should set flags" )
-void z80Emu::batch_compare(int direction,int repeat)
+// Should set flags but I can't find any clear details on how they are affected.
+void z80Emu::batch_compare(schar direction,int repeat)
 {
 	ushort addr;
 	uchar src;
 	do {
-		addr=op_r16(1,rHL,0,1);
+		addr=op_r16(1,rHL,0,true);
 		src=memread(addr,0);
 		op_alu(ALU_CP,src);
-		op_r16(opWR,rHL,op_r16(opRD,rHL,0,0)+direction,0);
-		op_r16(opWR,rBC,op_r16(opRD,rBC,0,0)-1,0);
-	} while (regA != src && op_r16(opRD,rBC,0,0) && repeat);
+		op_r16(opWR,rHL,op_r16(opRD,rHL,0,false)+direction,false);
+		op_r16(opWR,rBC,op_r16(opRD,rBC,0,false)-1,false);
+	} while (regA != src && op_r16(opRD,rBC,0,false) && repeat);
 }
 
 /*
@@ -742,24 +758,25 @@ void z80Emu::batch_compare(int direction,int repeat)
 |3|LDIR         |21/1| 2 |--000-|ED B0       |Load, Inc., Repeat   |LDI till BC=0         |
 +-+-------------+----+---+------+------------+---------------------+----------------------+
 */
-#pragma message ( "z80Emu::batch_load() should set flags" )
-void z80Emu::batch_load(int direction,int repeat)
+
+// Should set flags but I can't find any clear details on how they are affected.
+void z80Emu::batch_load(schar direction,int repeat)
 {
 	ushort src,dst;
 	uchar byt;
 	do {
-		src=op_r16(opRD,rHL,0,0);
-		dst=op_r16(opRD,rDE,0,0);
+		src=op_r16(opRD,rHL,0,false);
+		dst=op_r16(opRD,rDE,0,false);
 		byt=memread(src,0);
 		memwrite(dst,byt);
-		op_r16(opWR,rHL,op_r16(opRD,rHL,0,0)+direction,0);
-		op_r16(opWR,rDE,op_r16(opRD,rDE,0,0)+direction,0);
-		op_r16(opWR,rBC,op_r16(opRD,rBC,0,0)-1,0);
-	} while (repeat && op_r16(opRD,rBC,0,0));
+		op_r16(opWR,rHL,op_r16(opRD,rHL,0,false)+direction,false);
+		op_r16(opWR,rDE,op_r16(opRD,rDE,0,false)+direction,false);
+		op_r16(opWR,rBC,op_r16(opRD,rBC,0,false)-1,false);
+	} while (repeat && op_r16(opRD,rBC,0,false));
 }
 
 // src ignored if incdec - dereferences hl instead
-void z80Emu::op_out(int typ,uchar dest,uchar src,int incdec)
+void z80Emu::op_out(int typ,uchar dest,uchar src, schar incdec)
 {
 	ushort addr;
 	uchar newF;
@@ -771,10 +788,10 @@ void z80Emu::op_out(int typ,uchar dest,uchar src,int incdec)
 		break;
 
 	case 2: // outi/outd: (c)=(hl); hl+=incdec; b--; flags set according to b. src/dest ignored
-		addr=op_r16(opRD,rHL,0,0);
+		addr=op_r16(opRD,rHL,0,false);
 		src=memread(addr,0);
 		op_out(0,regC,src,0);
-		op_r16(opWR,rHL,op_r16(opRD,rHL,0,0)+incdec,0);
+		op_r16(opWR,rHL,op_r16(opRD,rHL,0,false)+incdec,false);
 		regB--;
 		newF=regF&(Smask|Hmask|Pmask|Cmask);
 		newF|=Nmask;
@@ -789,9 +806,9 @@ void z80Emu::op_out(int typ,uchar dest,uchar src,int incdec)
 	}
 }
 
-int z80Emu::execute_ed(int *time)
+uchar z80Emu::execute_ed(int *time)
 {
-	int len=2;
+	uchar len=2;
 	uchar byte=memread(pc+1,1);
 	int rDD=(byte/16)&3;
 	switch (byte)
@@ -832,7 +849,7 @@ int z80Emu::execute_ed(int *time)
 		break;
 	case 0x67: // rrd
 		{
-			ushort addr=op_r16(1,rHL,0,1);
+			ushort addr=op_r16(1,rHL,0,true);
 			uchar mem=memread(addr,0);
 
 			// a:(hl) -> nybbles 1,2,3,4
@@ -857,7 +874,7 @@ int z80Emu::execute_ed(int *time)
 		break;
 	case 0x6f: // rld 
 		{
-			ushort addr=op_r16(1,rHL,0,1);
+			ushort addr=op_r16(1,rHL,0,true);
 			uchar mem=memread(addr,0);
 
 			// a:(hl) -> nybbles 1,2,3,4
@@ -907,9 +924,9 @@ int z80Emu::execute_ed(int *time)
 	default:
 		if(0){}
 		else if ((byte & 0xcf)==0x43) len=op_ld(5,byte,time,0);                        // 01dd0011 ld (NN),dd
-		else if ((byte & 0xcf)==0x4a) { len=2; *time=15; op_r16(4,rDD,regF & Cmask,0);}// 01dd1010 adc hl,dd
+		else if ((byte & 0xcf)==0x4a) { len=2; *time=15; op_r16(4,rDD,regF & Cmask,false);}// 01dd1010 adc hl,dd
 		else if ((byte & 0xcf)==0x4b) len=op_ld(4,byte,time,0);                        // 01dd1011 ld dd,(NN) 
-		else if ((byte & 0xcf)==0x42) { len=2; *time=15; op_r16(5,rDD,regF & Cmask,0);}// 01dd0010 sbc hl,dd
+		else if ((byte & 0xcf)==0x42) { len=2; *time=15; op_r16(5,rDD,regF & Cmask,false);}// 01dd0010 sbc hl,dd
 		break;
 	}
 	return len;
@@ -925,7 +942,7 @@ void z80Emu::get_src(uchar bits012,uchar *src,int *dt)
 	{
 		// problem: for byte=0x3e ld a,N, this reads (hl), which resets a read-to-reset button
 
-		ushort addr=op_r16(1,rHL,0,1); // 1==use pc+1 if index!=0
+		ushort addr=op_r16(1,rHL,0,true); // 1==use pc+1 if index!=0
 		*src=memread(addr,0);
 		*dt=1; // isn't always 3. for LD, yes, but for BIT it's 4.  The 
 		// value is therefore instruction dependent.
@@ -935,11 +952,12 @@ void z80Emu::get_src(uchar bits012,uchar *src,int *dt)
 
 // so named because it was originally just performing ld.  However, it seems
 // to have grown...
-int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
+uchar z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 {
 	// Registers aren't stored in 8 sequential locations so we need a conversion table
 	// The index represents registers b,c,d,e,h,l,?,a (we need to handle (hl) separately)
-	int len=1,write=0,val, t_hl,t_reg;
+	uchar len = 1, val = 0;
+	int write = 0, t_hl = 0, t_reg = 0;
 	int reg_xlate[]={rB,rC,rD,rE,rH,rL,0,rA};
 	uchar bits012=byte&7;
 	uchar bits345=(byte/8)&7;
@@ -978,7 +996,7 @@ int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 		break;
 	case 3: // ld dd,NN (bc,de,hl,sp)
 		{
-			op_r16(0,bits45,memread16(pc+1,1),0);
+			op_r16(0,bits45,memread16(pc+1,1),false);
 			*time=10;
 			len=3;
 		}
@@ -986,7 +1004,7 @@ int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 	case 4: // ld dd,(NN) (bc,de,hl,sp)
 		{
 			ushort addr=memread16(pc+2,1);
-			op_r16(0,bits45,memread16(addr,0),0);
+			op_r16(0,bits45,memread16(addr,0),false);
 			*time=20;
 			len=4; // these are ED instructions. 2a XX XX ld hl,(NN) is handled separately
 		}
@@ -994,7 +1012,7 @@ int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 	case 5: // ld (NN),dd (bc de hl sp)
 		{
 			ushort addr=memread16(pc+2,1);
-			memwrite16(addr,op_r16(1,bits45,0,0));
+			memwrite16(addr,op_r16(1,bits45,0,false));
 			*time=20;
 			len=4; // these are ED instructions.
 		}
@@ -1022,7 +1040,7 @@ int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 			if (bits345==6)
 			{
 				// inc (hl)
-				ushort addr=op_r16(1,rHL,0,1);
+				ushort addr=op_r16(1,rHL,0,true);
 				memwrite(addr, op_alu(11,memread(addr,0)));
 				*time=11;
 			}
@@ -1039,7 +1057,7 @@ int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 			if (bits345==6)
 			{
 				// dec (hl)
-				ushort addr=op_r16(1,rHL,0,1);
+				ushort addr=op_r16(1,rHL,0,true);
 				memwrite(addr, op_alu(12,memread(addr,0)));
 				*time=11;
 			}
@@ -1085,7 +1103,7 @@ int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 	{
 		if (bits012==6)
 		{
-			ushort addr=op_r16(1,rHL,0,1);
+			ushort addr=op_r16(1,rHL,0,true);
 			memwrite(addr, val);
 			*time=t_hl;
 		}
@@ -1099,7 +1117,7 @@ int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 	{
 		if (bits345==6)
 		{
-			ushort addr=op_r16(1,rHL,0,1);
+			ushort addr=op_r16(1,rHL,0,true);
 			memwrite(addr, val);
 			*time=t_hl;
 		}
@@ -1116,27 +1134,27 @@ int z80Emu::op_ld(int typ,uchar byte,int *time,int alu)
 // idxoffset=0: return the value of the index reg
 // idxoffset=1: return the value of the index reg + the offset in pc+1
 //   (1 because dd/fd is executed as a 1 byte instruction)
-ushort z80Emu::op_r16(int typ,int reg,ushort val,int idxoffset)
+ushort z80Emu::op_r16(int typ,int reg,ushort val,bool addoffset)
 {
-	uchar hi=val/256;
-	uchar lo=(uchar)val;
+	uchar hi = (uchar)(val / 256);
+	uchar lo = (uchar)val;
 	ushort ret=0;
 	char offset=0;
 	if (index==1 && reg==rHL)
 	{
-		if (idxoffset==1)
+		if (addoffset)
 		{
 			offset=(char)memread(pc+1,1);
 		}
-		return op_r16(typ,rIX,val,0)+offset;
+		return op_r16(typ,rIX,val,false)+offset;
 	}
 	else if (index==2 && reg==rHL)
 	{
-		if (idxoffset==1)
+		if (addoffset)
 		{
 			offset=(char)memread(pc+1,1);
 		}
-		return op_r16(typ,rIY,val,0)+offset;
+		return op_r16(typ,rIY,val,false)+offset;
 	}
 
 	switch (typ)
@@ -1178,8 +1196,8 @@ ushort z80Emu::op_r16(int typ,int reg,ushort val,int idxoffset)
 			switch (reg)
 			{
 			case -1:  tmp=val; break;
-			case rSP: tmp=op_r16(1,rAF,0,0); break;
-			default:  tmp=op_r16(1,reg,0,0); break;
+			case rSP: tmp=op_r16(1,rAF,0,false); break;
+			default:  tmp=op_r16(1,reg,0,false); break;
 			}
 			memwrite16(sp,tmp);
 		}
@@ -1191,15 +1209,15 @@ ushort z80Emu::op_r16(int typ,int reg,ushort val,int idxoffset)
 			switch (reg)
 			{
 			case -1:  ret=tmp; break;
-			case rSP: op_r16(0,rAF,tmp,0); break;
-			default:  op_r16(0,reg,tmp,0); break;
+			case rSP: op_r16(0,rAF,tmp,false); break;
+			default:  op_r16(0,reg,tmp,false); break;
 			}
 		}
 		break;
 	case 4: // add register to hl with carry in val
 		{
-			ushort tmpHL=op_r16(1,rHL,0,0);
-			ushort tmpDD=op_r16(1,reg,0,0);
+			ushort tmpHL=op_r16(1,rHL,0,false);
+			ushort tmpDD=op_r16(1,reg,0,false);
 
 			regF &= ~(Nmask|Cmask); // zero N and C
 
@@ -1213,20 +1231,20 @@ ushort z80Emu::op_r16(int typ,int reg,ushort val,int idxoffset)
 				if (65535-tmpHL<tmpDD)  regF|=Cmask;
 			}
 			ushort newHL=tmpHL+tmpDD+val;
-			op_r16(0,rHL,newHL,0);
+			op_r16(0,rHL,newHL,false);
 
-			/*if (65535-op_r16(1,rHL,0,0)-val > op_r16(1,reg,0,0) || (op_r16(1,reg,0,0)==65535 && val))
+			/*if (65535-op_r16(1,rHL,0,false)-val > op_r16(1,reg,0,false) || (op_r16(1,reg,0,false)==65535 && val))
 			{
 				regF |= Cmask; // set C
 			}
 			// write to rHL the sum of rHL and reg
-			op_r16(0,rHL,op_r16(1,rHL,0,0)+op_r16(1,reg,0,0),0); */
+			op_r16(0,rHL,op_r16(1,rHL,0,false)+op_r16(1,reg,0,false),false); */
 		}
 		break;
 	case 5: // subtract register from hl with carry in val
 		{
-			ushort rg=op_r16(1,reg,0,0);
-			ushort hl=op_r16(1,rHL,0,0);
+			ushort rg=op_r16(1,reg,0,false);
+			ushort hl=op_r16(1,rHL,0,false);
 
 			regF &= ~(Vmask|Cmask); // zero N and C
 			regF |= Nmask;          // set N
@@ -1236,7 +1254,7 @@ ushort z80Emu::op_r16(int typ,int reg,ushort val,int idxoffset)
 				regF |= Cmask; // set C
 			}
 			// write to rHL the sum of rHL and reg
-			op_r16(0,rHL,hl-rg-val,0);
+			op_r16(0,rHL,hl-rg-val,false);
 		}
 		break;
 	}
@@ -1251,10 +1269,11 @@ int z80Emu::loadFile(char *fnam)
 	if (fp)
 	{
 		warm_reset();
-		int c,i=0;
+		uchar c;
+		int i = 0;
 		while (ret)
 		{
-			c=fgetc(fp);
+			c= (uchar)fgetc(fp);
 			if (feof(fp))
 				break;
 
@@ -1284,10 +1303,11 @@ int z80Emu::loadFileAt(char *fnam,int addr)
 	if (fp)
 	{
 		warm_reset();
-		int c,i=addr;
+		uchar c;
+		int i=addr;
 		while (ret)
 		{
-			c=fgetc(fp);
+			c= (uchar)fgetc(fp);
 			if (feof(fp))
 				break;
 
@@ -1375,114 +1395,114 @@ void z80Emu::report(char *t, int t_len)
 +*/
 }
 
-void z80Emu::disass3(char *instr,int i_len,int typ,char *mask,uchar *idx,uchar op)
+void z80Emu::disass3(char* instr, int i_len, int typ, char* mask, uchar* idx, uchar op)
 {
 	ushort addr;
 	uchar val1;
-	ushort bits012=op&7;
-	ushort bits345=(op/8)&7;
-	ushort bits45=bits345/2;
-	ushort bits34=bits345&3;
-	ushort bits456=(op/16)&7;
-	static char *regs[8]   ={"b","c","d","e","h","l","(hl)","a"};
-	static char *ioregs[8] ={"b","c","d","e","h","l","??","a"};
-	static char *dregs[4]  ={"bc","de","hl","sp"};
-	static char *stkregs[4]={"bc","de","hl","af"};
-	static char *flags[8]  ={"nz","z","nc","c","po","pe","p","m"};
+	ushort bits012 = op & 7;
+	ushort bits345 = (op / 8) & 7;
+	ushort bits45 = bits345 / 2;
+	ushort bits34 = bits345 & 3;
+	ushort bits456 = (op / 16) & 7;
+	static char* regnames[8] = { "b","c","d","e","h","l","(hl)","a" };
+	static char* ioregs[8] = { "b","c","d","e","h","l","??","a" };
+	static char* dregs[4] = { "bc","de","hl","sp" };
+	static char* stkregs[4] = { "bc","de","hl","af" };
+	static char* flags[8] = { "nz","z","nc","c","po","pe","p","m" };
 
 	switch (typ)
 	{
 	case 0: // mask contains decoded instruction
-		strcpy_s(instr,i_len,mask);
+		strcpy_s(instr, i_len, mask);
 		break;
 	case 1: // register in op bits 3-5; index reg in idx; 8 bit offset in pc+2
-		sprintf_s(instr, i_len,mask,regs[bits345],idx,memread(pc+2,0));
+		sprintf_s(instr, i_len, mask, regnames[bits345], idx, memread(pc + 2, 0));
 		break;
 	case 2: // index reg in idx; 8 bit offset in pc+2; register in op bits 0-2
-		sprintf_s(instr, i_len,mask,idx,memread(pc+2,0),regs[bits012]);
+		sprintf_s(instr, i_len, mask, idx, memread(pc + 2, 0), regnames[bits012]);
 		break;
 	case 3: // index reg in idx
-		sprintf_s(instr, i_len,mask,idx);
+		sprintf_s(instr, i_len, mask, idx);
 		break;
 	case 4: // index reg in idx, 16 bit address in pc+2 pc+3
-		addr=memread16(pc+2,0);
-		sprintf_s(instr, i_len,mask,idx,addr);
+		addr = memread16(pc + 2, 0);
+		sprintf_s(instr, i_len, mask, idx, addr);
 		break;
 	case 5: // 16 bit address in pc+2,pc+3; double reg in op bits 4-5
-		addr=memread16(pc+2,0);
-		sprintf_s(instr, i_len,mask,addr,dregs[bits45]);
+		addr = memread16(pc + 2, 0);
+		sprintf_s(instr, i_len, mask, addr, dregs[bits45]);
 		break;
 	case 6: // 16 bit address in pc+2 pc+3, index reg in idx
-		addr=memread16(pc+2,0);
-		sprintf_s(instr, i_len,mask,addr,idx);
+		addr = memread16(pc + 2, 0);
+		sprintf_s(instr, i_len, mask, addr, idx);
 		break;
 	case 7: // register in op bits 4-6 except (hl)
-		sprintf_s(instr, i_len,mask,ioregs[bits456]);
+		sprintf_s(instr, i_len, mask, ioregs[bits456]);
 		break;
 	case 8: // index register in idx; offset in pc+2
-		sprintf_s(instr, i_len,mask,idx,memread(pc+2,0));
+		sprintf_s(instr, i_len, mask, idx, memread(pc + 2, 0));
 		break;
 	case 9: // index register in idx; double reg in op bits 4-5 but replace hl with idx
-		sprintf_s(instr, i_len,mask,idx,(bits45==2)?(char*)idx:dregs[bits45]);
+		sprintf_s(instr, i_len, mask, idx, (bits45 == 2) ? (char*)idx : dregs[bits45]);
 		break;
 	case 10: // bit number in op bits 3-5; index in idx; offset in pc+2
-		sprintf_s(instr, i_len,mask,'0'+bits345,idx,memread(pc+2,0));
+		sprintf_s(instr, i_len, mask, '0' + bits345, idx, memread(pc + 2, 0));
 		break;
 	case 11: // 16 bit address in pc+1,pc+2
-		addr=memread16(pc+1,0);
-		sprintf_s(instr, i_len,mask,addr);
+		addr = memread16(pc + 1, 0);
+		sprintf_s(instr, i_len, mask, addr);
 		break;
 	case 12: // 8 bit value from pc+1
-		sprintf_s(instr, i_len,mask,memread(pc+1,0));
+		sprintf_s(instr, i_len, mask, memread(pc + 1, 0));
 		break;
 	case 13: // index register in idx; offset in pc+2; 8 bit value in pc+3
-		sprintf_s(instr, i_len,mask,idx,memread(pc+2,0),memread(pc+3,0));
+		sprintf_s(instr, i_len, mask, idx, memread(pc + 2, 0), memread(pc + 3, 0));
 		break;
 	case 14: // register in op bits 0-2
-		sprintf_s(instr, i_len,mask,regs[bits012]);
+		sprintf_s(instr, i_len, mask, regnames[bits012]);
 		break;
 	case 15: // jump type in op bits 4-5, 8 bit offset in pc+1 displayed as 16 bit pc+2+signed offset
-		val1=memread(pc+1,0);
-		addr=pc+2+val1;
-		if (val1>127) addr -= 256;
-		sprintf_s(instr, i_len,mask,flags[bits34],addr);
+		val1 = memread(pc + 1, 0);
+		addr = pc + 2 + val1;
+		if (val1 > 127) addr -= 256;
+		sprintf_s(instr, i_len, mask, flags[bits34], addr);
 		break;
 	case 16: // 8 bit offset in pc+1 displayed as 16 bit pc+2+signed offset
-		val1=memread(pc+1,0);
-		addr=pc+2+val1;
-		if (val1>127) addr -= 256;
-		sprintf_s(instr, i_len,mask,addr);
+		val1 = memread(pc + 1, 0);
+		addr = pc + 2 + val1;
+		if (val1 > 127) addr -= 256;
+		sprintf_s(instr, i_len, mask, addr);
 		break;
 	case 17: // double reg in op bits 4-5, 16 bit val in pc+1,pc+2
-		addr=memread16(pc+1,0);
-		sprintf_s(instr, i_len,mask,dregs[bits45],addr);
+		addr = memread16(pc + 1, 0);
+		sprintf_s(instr, i_len, mask, dregs[bits45], addr);
 		break;
 	case 18: // double reg in op bits 4-5
-		sprintf_s(instr, i_len,mask,dregs[bits45]);
+		sprintf_s(instr, i_len, mask, dregs[bits45]);
 		break;
 	case 20: // stkregs in op bits 4-5
-		sprintf_s(instr, i_len,mask,stkregs[bits45]);
+		sprintf_s(instr, i_len, mask, stkregs[bits45]);
 		break;
 	case 21: // register in op bits 3-5, 8 bit balue in pc+1
-		val1=memread(pc+1,0);
-		sprintf_s(instr, i_len,mask,regs[bits345],val1);
+		val1 = memread(pc + 1, 0);
+		sprintf_s(instr, i_len, mask, regnames[bits345], val1);
 		break;
 	case 22: // jump flags in op bits 3-5, 16 bit val in pc+1,pc+2
-		addr=memread16(pc+1,0);
-		sprintf_s(instr, i_len,mask,flags[bits345],addr);
+		addr = memread16(pc + 1, 0);
+		sprintf_s(instr, i_len, mask, flags[bits345], addr);
 		break;
 	case 23: // address in op
-		sprintf_s(instr, i_len,mask,op);
+		sprintf_s(instr, i_len, mask, op);
 		break;
 	case 24: // register in op bits 3-5
-		sprintf_s(instr, i_len,mask,regs[bits345]);
+		sprintf_s(instr, i_len, mask, regnames[bits345]);
 		break;
 	case 25: // registers in op bits 3-5 and 0-2
-		sprintf_s(instr, i_len,mask,regs[bits345],regs[bits012]);
+		sprintf_s(instr, i_len, mask, regnames[bits345], regnames[bits012]);
 		break;
 	case 26: // bit number in op bits 3-5; register in op bits 0-2
 		// else if ((byte & 0xc0)==0x40) disass2(t,16,&byte,"bit %c,%s"); // bit b,r: 01bbbrrr
-		sprintf_s(instr, i_len,mask,'0'+bits345,regs[bits012]);
+		sprintf_s(instr, i_len, mask, '0' + bits345, regnames[bits012]);
 		break;
 	}
 }
@@ -1555,7 +1575,7 @@ void z80Emu::disass_cb(char *t, int t_len)
 	else disass3(t, t_len,0,"unknown",0,0);
 }
 
-void z80Emu::disass_idx_cb(char *t, int t_len,int idx)
+void z80Emu::disass_idx_cb(char *t, int t_len)
 {
 	uchar ixy[3];
 	ixy[0]='i';
@@ -1581,7 +1601,7 @@ void z80Emu::disass_idx_cb(char *t, int t_len,int idx)
 	}
 }
 
-void z80Emu::disass_idx(char *t, int t_len,int idx)
+void z80Emu::disass_idx(char *t, int t_len, uchar idx)
 {
 	uchar ixy[3];
 	ixy[0]='i';
@@ -1609,7 +1629,7 @@ void z80Emu::disass_idx(char *t, int t_len,int idx)
 	case 0xb6: disass3(t,t_len,8,"or (%s+%d)"     ,ixy,0); break;
 	case 0xae: disass3(t,t_len,8,"xor (%s+%d)"    ,ixy,0); break;
 	case 0xbe: disass3(t,t_len,8,"cp (%s+%d)"     ,ixy,0); break;
-	case 0xcb: disass_idx_cb(t, t_len,idx); break;
+	case 0xcb: disass_idx_cb(t, t_len                   ); break;
 	case 0xe1: disass3(t,t_len,3,"pop %s"         ,ixy,0); break;
 	case 0xe3: disass3(t,t_len,3,"ex (sp),%s"     ,ixy,0); break;
 	case 0xe5: disass3(t,t_len,3,"push %s"        ,ixy,0); break;

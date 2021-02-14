@@ -11,15 +11,15 @@ redraw: just draw self
 class InterfaceObject
 {
 private:
-	int id;
-	int mem_addr;
+	int id{ -1 };
+	int mem_addr{};
 
 protected:
-	InterfaceObject():id(-1),dirty(1){}
-	int x,y,cx,cy;
-	int dirty;
+	int x{}, y{}, cx{}, cy{};
+	int dirty{ 1 };
 
 public:
+	virtual ~InterfaceObject() {};
 	virtual int click(int xx,int yy){return xx>=x && xx <(x+cx) && yy>=y && yy<(y+cy);}
 	int isdirty()
 	{

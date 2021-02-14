@@ -225,8 +225,11 @@ int gettokfromline(char **lineptr, char *token, int maxchars, int include_spaces
     {
         if (include_spaces || !isspace(*ptr))
         {
-            token[i++] = *ptr;
-            token[i] = 0;
+            if (i < maxchars-1)
+            {
+                token[i++] = *ptr;
+                token[i] = 0;
+            }
         }
         ptr++;
     }
@@ -339,11 +342,11 @@ void readUIConfig(HWND hWnd, char *FileName)
                 }
                 else if (!strcmp(item, "loadimage"))
                 {
-                    char FileName[132];
-                    if (gettokfromline(&ptr, FileName, 130, 1) &&
+                    char ImageFile[132];
+                    if (gettokfromline(&ptr, ImageFile, 130, 1) &&
                         gettokfromline(&ptr, addr, itemlen, 0))
                     {
-                        if (theEmu->loadFileAt(FileName, atoi(addr)))
+                        if (theEmu->loadFileAt(ImageFile, atoi(addr)))
                             err = 0;
                     }
                 }
