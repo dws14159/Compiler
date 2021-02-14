@@ -30,7 +30,6 @@ z80cc -- the C compiler for the z80 - the whole point of this project
 z80emu -- an emulator based on an instruction interpreter; this won't be a T-state accurate
 - emulator, it'll just take in each instruction and make the relevant changes in registers and memory.
 - There will be memory mapped IO with all attached hardware emulated, so this will run as a Windows GUI program.
-- Previously this just hit the WinAPI directly but in the rewrite I've decided to use wxWidgets.
 
 Over the years I've taken various copies at different stages of development, no source code control, so now
 I've got a mess of loads of different copies. Tried marking a directory as MASTER but this didn't work out.
@@ -72,6 +71,7 @@ Let's get all strings into std::string as soon as possible.  <-- Does this solve
 Testing: Assembler doesn't need any. Some other projects might
 ~
 Using wxWidgets for z80emu
+- nope, rewriting to Modern C++ would be a better use of time
 ~
 we can simplify the parsing for numbers:
 $xxx = hex: x in 0123456789abcdef
@@ -122,7 +122,7 @@ Q: z80asm: might be nice to look at VSCode integration
 A: Err, no.
 
 Q: Solution: when do we first check in to Git?  When z80asm is complete?
-A: No, z80asm started, all other projects stubbed, z80emu created as a minimal wxWidgets. Check-in to git and upload to GitHub
+A: No, z80asm started, z80emu restored, all other projects stubbed. Check-in to git and upload to GitHub
 
 
 

@@ -1,0 +1,58 @@
+z80emu
+------
+Mem-read/write assume that everything >= 0xff00 is memory mapped IO.  256 gadgets should be enough for anyone!
+
+*****
+As we have lots of projects to work through at this time (Oct 2015), let's get this to the state where we can run a simple program, then Suspend and bung back in Inf09 for now.
+Current state is that it hardwires 2 buttons and 2 7-seg displays - let's make sure it runs a quick program that just checks the buttons and increments/decrements the displayed number accordingly.
+
+Before archive, implement at least Todo-1.
+*****
+
+
+To Do:
+
+(1) Need to check how the click code works - is the fact that we've clicked a button kept somewhere?
+There's a dirty flag, is that it?
+It'd be nice if the clicked status could be latched until we read it, then we don't need to worry too much about scanning the buttons continuously.
+Also this would effectively debounce the connections.
+
+(2) readUIConfig is not called anywhere...
+
+(3) Seems to be other stuff that isn't called.  But I thought I had a working version somewhere. - yes, this is a rewrite.  All old versions now merged into this one.
+
+(4) File Open perhaps to open a single file containing emulator setup and the code.
+
+(5) Rather than having config files, why not enable the emulator to configure itself under software control?
+
+(6) Add functionality to support calculator and clock programs.
+
+(7) Disassembler needs to display code correctly
+- correct number of bytes per instruction
+- display constants in decimal
+- djnz,jr (others? ix+n?) to display offsets as +/-
+
+(8) Configurable hardware (nearly done)
+- specify window size
+- specify gadget type, memory location, screen location
+- specify ram, rom, io, other h/w?
+- possibly need to rewrite emulator - z80emu class actually emulates a bunch
+of hardware including RAM, not just a Z80 itself.  Some way of adding
+hardware together perhaps, to emulate a circuit?
+- integrate hardware,ram config,rom config,rom image into one big config file?
+
+(9) gadget types:
+- 7-seg display
+- simple button (better buttons later)
+- clock (interrupt model for clocks?)
+- register display
+- memory dump with scrollbar
+- editable register/memory displays
+
+(10) implement buttons for run, stop, step, reset, file open
+(basically all menus) - VC++ debug button lookalikes?
+
+
+Done:
+
+All old versions now merged into this one.
